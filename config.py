@@ -1,12 +1,15 @@
 import os
 
-# Обязательные параметры
-BOT_TOKEN = os.getenv("BOT_TOKEN")
-CHANNEL_ID = int(os.getenv("CHANNEL_ID", -1002665040288))  # Ваш канал для постбеков
-PARTNER_LINK = os.getenv("PARTNER_LINK", "https://1wwcr.com/").rstrip('/') + '/'
-WEBAPP_LINK = os.getenv("WEBAPP_LINK", "https://dden59.github.io/keeper/")
+# Токен бота-обработчика (главный бот)
+BOT_TOKEN = "7554184368:AAFppJytJDqR2Ssw8fTnQ9_IRvURLcG2lU8"
 
-# Жёсткие проверки
-assert len(BOT_TOKEN) == 46, "Неверная длина токена! Проверьте BOT_TOKEN"
-assert CHANNEL_ID < 0, "CHANNEL_ID должен быть отрицательным (канал/супергруппа)"
-assert WEBAPP_LINK.startswith('https://'), "WebApp требует HTTPS!"
+# ID канала для постбеков (начинается с -100)
+CHANNEL_ID = -1002665040288
+
+# Ссылки (HTTPS обязательно!)
+PARTNER_LINK = "https://1wwcr.com/?sub1="
+WEBAPP_LINK = "https://dden59.github.io/keeper/"
+
+# Проверки
+assert BOT_TOKEN == "7554184368:AAFppJytJDqR2Ssw8fTnQ9_IRvURLcG2lU8", "Неверный токен бота!"
+assert str(CHANNEL_ID).startswith("-100"), "CHANNEL_ID должен быть ID канала"
