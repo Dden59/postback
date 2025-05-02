@@ -12,7 +12,7 @@ bot = Bot(token=BOT_TOKEN)
 dp = Dispatcher(bot)
 app = web.Application()
 
-# Хэндлер для проверки работоспособности сервиса
+# Хэндлер для проверки работоспособности
 async def health_check(request):
     return web.Response(text="OK")
 
@@ -28,11 +28,11 @@ async def on_startup(dp):
     except Exception as e:
         logger.error(f"❌ Ошибка при установке вебхука: {e}")
 
-# Удаление вебхука при завершении работы
+# Удаление вебхука при завершении
 async def on_shutdown(dp):
     await bot.delete_webhook()
 
-# Хэндлер постбэков из канала
+# Обработка постбэков из канала
 @dp.channel_post_handler(chat_id=CHANNEL_ID)
 async def handle_post(message: types.Message):
     try:
@@ -52,7 +52,7 @@ async def handle_post(message: types.Message):
     except Exception as e:
         logger.error(f"Ошибка при обработке поста: {e}")
 
-# Запуск приложения через вебхук
+# Запуск бота через вебхук
 if __name__ == "__main__":
     start_webhook(
         dispatcher=dp,
@@ -61,6 +61,5 @@ if __name__ == "__main__":
         on_shutdown=on_shutdown,
         skip_updates=True,
         host="0.0.0.0",
-        port=int(os.getenv("PORT", 8000)),
-        app=app
+        port=int(os.getenv("PORT", 8000))
     )
