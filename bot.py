@@ -1,6 +1,7 @@
 import logging
 from aiogram import Bot, Dispatcher, executor, types
-from config import BOT_TOKEN, PARTNER_LINK, WEBAPP_LINK
+from aiogram.types import InlineKeyboardMarkup, InlineKeyboardButton
+from config import BOT_TOKEN, PARTNER_LINK, WEBAPP_LINK, CHANNEL_ID
 from utils import wait_for_event
 
 # Настройка логирования
@@ -15,65 +16,90 @@ bot = Bot(token=BOT_TOKEN)
 dp = Dispatcher(bot)
 users_in_progress = {}
 
+# Клавиатуры
+def get_registration_kb(user_id: int):
+    return InlineKeyboardMarkup().row(
+        InlineKeyboardButton(
+            "🔹 Зарегистрироваться", 
+            url=f"{PARTNER_LINK}{user_id}"
+        )
+    )
+
+def get_deposit_kb(user_id: int):
+    return InlineKeyboardMarkup().row(
+        InlineKeyboardButton(
+            "💰 Сделать первый депозит", 
+            url=f"{PARTNER_LINK}{user_id}"
+        )
+    )
+
+def get_app_access_kb():
+    return InlineKeyboardMarkup().row(
+        InlineKeyboardButton(
+            "🚀 Открыть Rocket Keeper", 
+            web_app=types.WebAppInfo(url=WEBAPP_LINK)
+        )
+    )
+
 @dp.message_handler(commands=["start"])
 async def start(message: types.Message):
     user_id = message.from_user.id
     
-    # Проверяем валидность user_id
     if not str(user_id).isdigit():
         await message.answer("❌ Ошибка: неверный ID пользователя")
         return
 
     users_in_progress[user_id] = {"reg": False, "dep": False}
-    link = f"{PARTNER_LINK}{user_id}"
     
+    # Первый этап - регистрация
     await message.answer(
-        f"👋 Привет! Для доступа к Rocket Keeper:\n\n"
-        f"1. Зарегистрируйтесь по ссылке:\n🔗 {link}\n\n"
-        f"2. Сделайте депозит от 500 RUB\n\n"
-        f"Я пришлю уведомление после проверки..."
+        "📝 Для доступа к Rocket Keeper вам нужно:\n\n"
+        "1. Зарегистрироваться на платформе\n"
+        "2. Сделать депозит от 500 RUB\n\n"
+        "Нажмите кнопку ниже чтобы начать:",
+        reply_markup=get_registration_kb(user_id)
     )
 
+    # Ожидаем регистрацию (формат: {user_id})
     try:
-        # Ожидаем регистрацию (5 минут)
-        registered = await wait_for_event(bot, user_id, "Lead")
+        registered = await wait_for_event(bot, user_id, "Lead", timeout=600)
         if not registered:
-            await message.answer("❌ Регистрация не подтверждена. Попробуйте снова.")
+            await message.answer("⌛ Время ожидания регистрации истекло. Попробуйте снова /start")
             return
 
         users_in_progress[user_id]["reg"] = True
-        await message.answer("✅ Регистрация подтверждена! Теперь сделайте депозит от 500 RUB...")
+        
+        # Второй этап - депозит (формат: {user_id}|Firstdep|{amount})
+        await message.answer(
+            "✅ Регистрация подтверждена!\n\n"
+            "Теперь сделайте первый депозит от 500 RUB:",
+            reply_markup=get_deposit_kb(user_id)
+        )
 
-        # Ожидаем депозит (5 минут)
-        deposit_amount = await wait_for_event(bot, user_id, "Firstdep")
+        deposit_amount = await wait_for_event(bot, user_id, "Firstdep", timeout=600)
         if not deposit_amount:
-            await message.answer("❌ Депозит не обнаружен. Попробуйте позже.")
+            await message.answer("⌛ Время ожидания депозита истекло. Попробуйте снова /start")
             return
 
-        # Проверяем минимальную сумму депозита
         if deposit_amount < 500:
-            await message.answer(f"❌ Сумма депозита {deposit_amount} RUB меньше минимальной (500 RUB)")
+            await message.answer(
+                f"❌ Сумма депозита {deposit_amount} RUB меньше минимальной (500 RUB)\n"
+                "Попробуйте снова /start"
+            )
             return
 
         users_in_progress[user_id]["dep"] = True
         
-        # Создаем кнопку для мини-приложения
-        btn = types.InlineKeyboardMarkup().add(
-            types.InlineKeyboardButton(
-                "🚀 Открыть Rocket Keeper", 
-                web_app=types.WebAppInfo(url=WEBAPP_LINK)
-            )
-        )
-        
+        # Финальный этап - доступ к приложению
         await message.answer(
-            f"💸 Депозит {deposit_amount} RUB подтверждён!\n"
-            "Доступ к приложению:",
-            reply_markup=btn
+            f"🎉 Поздравляем! Ваш депозит {deposit_amount} RUB подтверждён.\n\n"
+            "Теперь вы можете использовать Rocket Keeper:",
+            reply_markup=get_app_access_kb()
         )
 
     except Exception as e:
-        logger.error(f"Ошибка в обработке команды /start: {e}")
-        await message.answer("⚠️ Произошла ошибка. Попробуйте позже.")
+        logger.error(f"Error in start handler: {e}")
+        await message.answer("⚠️ Произошла ошибка. Попробуйте позже /start")
 
 if __name__ == "__main__":
     executor.start_polling(dp, skip_updates=True)
