@@ -36,6 +36,7 @@ async def handle_post(message: types.Message):
                         types.InlineKeyboardButton(
                             "🚀 Открыть приложение",
                             web_app=types.WebAppInfo(url=WEBAPP_URL)
+                        )
                     )
                 )
     except Exception as e:
