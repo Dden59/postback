@@ -1,4 +1,5 @@
 import logging
+import os  # Добавьте эту строку в начале файла!
 from aiogram import Bot, Dispatcher, types
 from aiogram.utils.executor import start_webhook
 from config import BOT_TOKEN, CHANNEL_ID, WEBAPP_URL, DOMAIN
@@ -14,7 +15,7 @@ async def on_startup(dp):
         url=f"{DOMAIN}/webhook",
         drop_pending_updates=True
     )
-    logger.info("Бот запущен в режиме вебхука")
+    logger.info(f"Webhook установлен на {DOMAIN}/webhook")
 
 async def on_shutdown(dp):
     await bot.delete_webhook()
@@ -47,5 +48,5 @@ if __name__ == "__main__":
         on_shutdown=on_shutdown,
         skip_updates=True,
         host="0.0.0.0",
-        port=int(os.getenv("PORT", 8000))
+        port=int(os.getenv("PORT", 8000))  # Теперь os будет определен
     )
