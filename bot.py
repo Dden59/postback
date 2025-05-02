@@ -22,7 +22,7 @@ async def on_startup(dp):
         )
         logger.info("✅ Вебхук установлен!")
     except Exception as e:
-        logger.error(f"❌ Ошибка вебхука: {e}")
+        logger.error(f"❌ Ошибка: {e}")
         raise
 
 async def on_shutdown(dp):
@@ -48,7 +48,6 @@ async def handle_post(message: types.Message):
         logger.error(f"Ошибка обработки: {e}")
 
 if __name__ == "__main__":
-    logger.info(f"Запуск на домене: {DOMAIN}")
     start_webhook(
         dispatcher=dp,
         webhook_path="/webhook",
