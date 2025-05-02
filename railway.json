@@ -1,4 +1,4 @@
-{
+{{
   "build": {
     "builder": "NIXPACKS",
     "config": {
@@ -7,14 +7,6 @@
   },
   "deploy": {
     "startCommand": "python bot.py",
-    "healthcheckPath": "/health",
-    "variables": {
-      "BOT_TOKEN": {
-        "value": "7554184368:AAFppJytJDqR2Ssw8fTnQ9_IRvURLcG2lU8"
-      },
-      "CHANNEL_ID": {
-        "value": "-1002665040288"
-      }
-    }
+    "healthcheckPath": "/health"
   }
 }
