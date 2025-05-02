@@ -49,14 +49,16 @@ async def start(message: types.Message):
             reply_markup=kb["reg"]
         )
         
-        if await wait_for_event(bot, CHANNEL_ID, user_id, "Lead"):
+        # Проверка регистрации
+        if await wait_for_event(bot, user_id, "Lead"):
             # Этап 2: Депозит
             await message.answer(
                 "✅ Регистрация подтверждена!\nПополните счет:",
                 reply_markup=kb["deposit"]
             )
             
-            amount = await wait_for_event(bot, CHANNEL_ID, user_id, "Firstdep")
+            # Проверка депозита
+            amount = await wait_for_event(bot, user_id, "Firstdep")
             if amount and amount >= 500:
                 await message.answer(
                     f"🎉 Депозит {amount} RUB принят!",
@@ -76,4 +78,9 @@ async def on_startup(dp):
     logger.info("Бот запущен!")
 
 if __name__ == "__main__":
-    executor.start_polling(dp, on_startup=on_startup, skip_updates=True)
+    executor.start_polling(
+        dp,
+        on_startup=on_startup,
+        skip_updates=True,
+        timeout=60
+    )
