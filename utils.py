@@ -1,29 +1,35 @@
 import asyncio
 import logging
+from aiogram.types import Message
 
 logger = logging.getLogger(__name__)
 
-async def wait_for_event(bot, channel_id: int, user_id: int, event_type: str, timeout: int = 300):
+async def wait_for_event(bot, user_id: int, event_type: str, timeout: int = 300):
     """
-    Новая версия с:
-    - Поддержкой get_chat_history
+    Улучшенная версия с:
+    - Поддержкой новых методов aiogram
     - Подробным логированием
     """
     try:
         target = str(user_id) if event_type == "Lead" else f"{user_id}|Firstdep"
         
         for _ in range(timeout // 3):
-            async for msg in bot.get_chat_history(chat_id=channel_id, limit=50):
-                if not msg.text:
+            # Получаем последние сообщения через API
+            messages = await bot.get_updates(limit=50)
+            
+            for update in messages:
+                if not update.message or not update.message.text:
                     continue
                     
-                if event_type == "Lead" and msg.text.strip() == str(user_id):
+                msg = update.message.text
+                
+                if event_type == "Lead" and msg.strip() == str(user_id):
                     logger.info(f"Найдена регистрация: {user_id}")
                     return True
                     
-                if event_type == "Firstdep" and msg.text.startswith(f"{user_id}|Firstdep|"):
+                if event_type == "Firstdep" and msg.startswith(f"{user_id}|Firstdep|"):
                     try:
-                        return float(msg.text.split('|')[2])
+                        return float(msg.split('|')[2])
                     except (ValueError, IndexError):
                         continue
             
@@ -32,5 +38,5 @@ async def wait_for_event(bot, channel_id: int, user_id: int, event_type: str, ti
         return False
 
     except Exception as e:
-        logger.error(f"Ошибка проверки канала: {e}")
+        logger.error(f"Ошибка проверки: {e}")
         return False
