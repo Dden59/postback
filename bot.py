@@ -1,4 +1,5 @@
 import logging
+import asyncio
 from aiogram import Bot, Dispatcher, executor, types
 from aiogram.contrib.fsm_storage.memory import MemoryStorage
 from config import BOT_TOKEN, PARTNER_LINK, WEBAPP_LINK, CHANNEL_ID
@@ -12,11 +13,6 @@ logger = logging.getLogger(__name__)
 
 bot = Bot(token=BOT_TOKEN)
 dp = Dispatcher(bot, storage=MemoryStorage())
-
-async def reset_sessions():
-    temp_bot = Bot(token=BOT_TOKEN)
-    await temp_bot.delete_webhook(drop_pending_updates=True)
-    await temp_bot.session.close()
 
 def get_keyboards(user_id: int):
     return {
@@ -72,7 +68,14 @@ async def start(message: types.Message):
         logger.error(f"Ошибка: {e}")
         await message.answer("⚠️ Ошибка системы")
 
+async def on_startup(dp):
+    await bot.delete_webhook(drop_pending_updates=True)
+    logger.info("✅ Бот успешно запущен!")
+
 if __name__ == "__main__":
-    import asyncio
-    asyncio.run(reset_sessions())
-    executor.start_polling(dp, skip_updates=True)
+    executor.start_polling(
+        dp,
+        on_startup=on_startup,
+        skip_updates=True,
+        timeout=60
+    )
