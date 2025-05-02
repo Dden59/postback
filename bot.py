@@ -4,16 +4,19 @@ from aiogram.contrib.fsm_storage.memory import MemoryStorage
 from config import BOT_TOKEN, PARTNER_LINK, WEBAPP_LINK, CHANNEL_ID
 from utils import wait_for_event
 
-# Настройка логирования
 logging.basicConfig(
     level=logging.INFO,
     format="%(asctime)s - %(name)s - %(levelname)s - %(message)s"
 )
 logger = logging.getLogger(__name__)
 
-# Инициализация с сессией
 bot = Bot(token=BOT_TOKEN)
 dp = Dispatcher(bot, storage=MemoryStorage())
+
+async def reset_sessions():
+    temp_bot = Bot(token=BOT_TOKEN)
+    await temp_bot.delete_webhook(drop_pending_updates=True)
+    await temp_bot.session.close()
 
 def get_keyboards(user_id: int):
     return {
@@ -43,21 +46,17 @@ async def start(message: types.Message):
     kb = get_keyboards(user_id)
     
     try:
-        # Этап 1: Регистрация
         await message.answer(
             "📝 Для доступа нужно:\n1. Зарегистрироваться\n2. Депозит от 500 RUB",
             reply_markup=kb["reg"]
         )
         
-        # Проверка регистрации
         if await wait_for_event(bot, user_id, "Lead"):
-            # Этап 2: Депозит
             await message.answer(
                 "✅ Регистрация подтверждена!\nПополните счет:",
                 reply_markup=kb["deposit"]
             )
             
-            # Проверка депозита
             amount = await wait_for_event(bot, user_id, "Firstdep")
             if amount and amount >= 500:
                 await message.answer(
@@ -73,14 +72,7 @@ async def start(message: types.Message):
         logger.error(f"Ошибка: {e}")
         await message.answer("⚠️ Ошибка системы")
 
-async def on_startup(dp):
-    await bot.delete_webhook(drop_pending_updates=True)
-    logger.info("Бот запущен!")
-
 if __name__ == "__main__":
-    executor.start_polling(
-        dp,
-        on_startup=on_startup,
-        skip_updates=True,
-        timeout=60
-    )
+    import asyncio
+    asyncio.run(reset_sessions())
+    executor.start_polling(dp, skip_updates=True)
