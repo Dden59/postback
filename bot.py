@@ -12,9 +12,11 @@ bot = Bot(token=BOT_TOKEN)
 dp = Dispatcher(bot)
 app = web.Application()
 
+# Хэндлер для проверки работоспособности сервиса
 async def health_check(request):
     return web.Response(text="OK")
 
+# Установка вебхука при запуске
 async def on_startup(dp):
     app.router.add_get('/health', health_check)
     try:
@@ -24,11 +26,13 @@ async def on_startup(dp):
         )
         logger.info("✅ Вебхук установлен!")
     except Exception as e:
-        logger.error(f"❌ Ошибка: {e}")
+        logger.error(f"❌ Ошибка при установке вебхука: {e}")
 
+# Удаление вебхука при завершении работы
 async def on_shutdown(dp):
     await bot.delete_webhook()
 
+# Хэндлер постбэков из канала
 @dp.channel_post_handler(chat_id=CHANNEL_ID)
 async def handle_post(message: types.Message):
     try:
@@ -42,11 +46,13 @@ async def handle_post(message: types.Message):
                         types.InlineKeyboardButton(
                             "🚀 Открыть приложение",
                             web_app=types.WebAppInfo(url=WEBAPP_URL)
+                        )
                     )
-                )  # Закрывающая скобка для send_message
+                )
     except Exception as e:
-        logger.error(f"Ошибка: {e}")
+        logger.error(f"Ошибка при обработке поста: {e}")
 
+# Запуск приложения через вебхук
 if __name__ == "__main__":
     start_webhook(
         dispatcher=dp,
