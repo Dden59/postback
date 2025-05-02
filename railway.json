@@ -1,0 +1,19 @@
+{
+  "build": {
+    "builder": "NIXPACKS",
+    "config": {}
+  },
+  "deploy": {
+    "startCommand": "python bot.py",
+    "variables": {
+      "BOT_TOKEN": {
+        "description": "Токен главного бота",
+        "value": "7554184368:AAFppJytJDqR2Ssw8fTnQ9_IRvURLcG2lU8"
+      },
+      "CHANNEL_ID": {
+        "description": "ID канала для постбеков",
+        "value": "-1002665040288"
+      }
+    }
+  }
+}
