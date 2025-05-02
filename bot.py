@@ -1,5 +1,5 @@
 import logging
-import os  # Добавьте эту строку в начале файла!
+import os
 from aiogram import Bot, Dispatcher, types
 from aiogram.utils.executor import start_webhook
 from config import BOT_TOKEN, CHANNEL_ID, WEBAPP_URL, DOMAIN
@@ -11,11 +11,18 @@ bot = Bot(token=BOT_TOKEN)
 dp = Dispatcher(bot)
 
 async def on_startup(dp):
-    await bot.set_webhook(
-        url=f"{DOMAIN}/webhook",
-        drop_pending_updates=True
-    )
-    logger.info(f"Webhook установлен на {DOMAIN}/webhook")
+    try:
+        webhook_url = f"{DOMAIN}/webhook"
+        logger.info(f"Пытаюсь установить вебхук на: {webhook_url}")
+        
+        await bot.set_webhook(
+            url=webhook_url,
+            drop_pending_updates=True
+        )
+        logger.info("Вебхук успешно установлен!")
+    except Exception as e:
+        logger.error(f"Ошибка установки вебхука: {e}")
+        raise
 
 async def on_shutdown(dp):
     await bot.delete_webhook()
@@ -23,24 +30,10 @@ async def on_shutdown(dp):
 
 @dp.channel_post_handler(chat_id=CHANNEL_ID)
 async def handle_post(message: types.Message):
-    try:
-        if "|Firstdep|" in message.text:
-            user_id, _, amount = message.text.split('|')
-            if float(amount) >= 500:
-                await bot.send_message(
-                    chat_id=int(user_id),
-                    text=f"✅ Депозит {amount} RUB принят!",
-                    reply_markup=types.InlineKeyboardMarkup().add(
-                        types.InlineKeyboardButton(
-                            "🚀 Открыть приложение",
-                            web_app=types.WebAppInfo(url=WEBAPP_URL)
-                        )
-                    )
-                )
-    except Exception as e:
-        logger.error(f"Ошибка: {e}")
+    # ... ваш существующий код обработки ...
 
 if __name__ == "__main__":
+    logger.info(f"Запуск бота с доменом: {DOMAIN}")
     start_webhook(
         dispatcher=dp,
         webhook_path="/webhook",
@@ -48,5 +41,5 @@ if __name__ == "__main__":
         on_shutdown=on_shutdown,
         skip_updates=True,
         host="0.0.0.0",
-        port=int(os.getenv("PORT", 8000))  # Теперь os будет определен
+        port=int(os.getenv("PORT", 8000))
     )
