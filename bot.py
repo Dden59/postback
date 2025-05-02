@@ -11,71 +11,69 @@ logging.basicConfig(
 )
 logger = logging.getLogger(__name__)
 
-bot = Bot(token=BOT_TOKEN)
-dp = Dispatcher(bot, storage=MemoryStorage())
+async def main():
+    bot = Bot(token=BOT_TOKEN)
+    dp = Dispatcher(bot, storage=MemoryStorage())
 
-def get_keyboards(user_id: int):
-    return {
-        "reg": types.InlineKeyboardMarkup().add(
-            types.InlineKeyboardButton(
-                "🔹 Зарегистрироваться", 
-                url=f"{PARTNER_LINK}{user_id}"
+    def get_keyboards(user_id: int):
+        return {
+            "reg": types.InlineKeyboardMarkup().add(
+                types.InlineKeyboardButton(
+                    "🔹 Зарегистрироваться", 
+                    url=f"{PARTNER_LINK}{user_id}"
+                )
+            ),
+            "deposit": types.InlineKeyboardMarkup().add(
+                types.InlineKeyboardButton(
+                    "💰 Сделать депозит", 
+                    url=f"{PARTNER_LINK}{user_id}"
+                )
+            ),
+            "app": types.InlineKeyboardMarkup().add(
+                types.InlineKeyboardButton(
+                    "🚀 Открыть приложение", 
+                    web_app=types.WebAppInfo(url=WEBAPP_LINK)
+                )
             )
-        ),
-        "deposit": types.InlineKeyboardMarkup().add(
-            types.InlineKeyboardButton(
-                "💰 Сделать депозит", 
-                url=f"{PARTNER_LINK}{user_id}"
-            )
-        ),
-        "app": types.InlineKeyboardMarkup().add(
-            types.InlineKeyboardButton(
-                "🚀 Открыть приложение", 
-                web_app=types.WebAppInfo(url=WEBAPP_LINK)
-            )
-        )
-    }
+        }
 
-@dp.message_handler(commands=["start"])
-async def start(message: types.Message):
-    user_id = message.from_user.id
-    kb = get_keyboards(user_id)
-    
-    try:
-        await message.answer(
-            "📝 Для доступа нужно:\n1. Зарегистрироваться\n2. Депозит от 500 RUB",
-            reply_markup=kb["reg"]
-        )
+    @dp.message_handler(commands=["start"])
+    async def start(message: types.Message):
+        user_id = message.from_user.id
+        kb = get_keyboards(user_id)
         
-        if await wait_for_event(bot, user_id, "Lead"):
+        try:
             await message.answer(
-                "✅ Регистрация подтверждена!\nПополните счет:",
-                reply_markup=kb["deposit"]
+                "📝 Для доступа нужно:\n1. Зарегистрироваться\n2. Депозит от 500 RUB",
+                reply_markup=kb["reg"]
             )
             
-            amount = await wait_for_event(bot, user_id, "Firstdep")
-            if amount and amount >= 500:
+            if await wait_for_event(bot, user_id, "Lead"):
                 await message.answer(
-                    f"🎉 Депозит {amount} RUB принят!",
-                    reply_markup=kb["app"]
+                    "✅ Регистрация подтверждена!\nПополните счет:",
+                    reply_markup=kb["deposit"]
                 )
+                
+                amount = await wait_for_event(bot, user_id, "Firstdep")
+                if amount and amount >= 500:
+                    await message.answer(
+                        f"🎉 Депозит {amount} RUB принят!",
+                        reply_markup=kb["app"]
+                    )
+                else:
+                    await message.answer("❌ Нужен депозит от 500 RUB")
             else:
-                await message.answer("❌ Нужен депозит от 500 RUB")
-        else:
-            await message.answer("⌛ Регистрация не найдена")
+                await message.answer("⌛ Регистрация не найдена")
 
-    except Exception as e:
-        logger.error(f"Ошибка: {e}")
-        await message.answer("⚠️ Ошибка системы")
+        except Exception as e:
+            logger.error(f"Ошибка: {e}")
+            await message.answer("⚠️ Ошибка системы")
 
-async def on_startup(dp):
-    await bot.delete_webhook(drop_pending_updates=True)
-    logger.info("✅ Бот успешно запущен!")
+    await dp.skip_updates()
+    await dp.start_polling()
 
 if __name__ == "__main__":
-    executor.start_polling(
-        dp,
-        on_startup=on_startup,
-        skip_updates=True,
-        timeout=60
-    )
+    try:
+        asyncio.run(main())
+    except Exception as e:
+        logger.error(f"Критическая ошибка: {e}")
