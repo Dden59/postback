@@ -6,8 +6,10 @@ from aiogram.enums import ParseMode
 from aiogram.fsm.storage.memory import MemoryStorage
 from aiogram.webhook.aiohttp_server import SimpleRequestHandler, setup_application
 
+from utils import wait_for_event
+
 BOT_TOKEN = "7554184368:AAFppJytJDqR2Ssw8fTnQ9_IRvURLcG2lU8"
-DOMAIN = "https://gracious-rebirth.up.railway.app"
+DOMAIN = f"https://{os.getenv('RAILWAY_PROJECT_NAME', 'gracious-rebirth')}.up.railway.app"
 WEBHOOK_PATH = "/webhook"
 WEBHOOK_URL = f"{DOMAIN}{WEBHOOK_PATH}"
 WEBAPP_URL = "https://dden59.github.io/keeper/"
