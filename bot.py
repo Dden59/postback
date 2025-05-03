@@ -5,13 +5,15 @@ from aiohttp import web
 from config import BOT_TOKEN, CHANNEL_ID, WEBAPP_URL, DOMAIN
 from utils import wait_for_event
 
+# Настройка логгирования
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
+# Инициализация бота и диспетчера
 bot = Bot(token=BOT_TOKEN)
 dp = Dispatcher(bot)
 
-# /start — приветствие + логика
+# Обработка команды /start
 @dp.message_handler(commands=['start'])
 async def start_handler(message: types.Message):
     user_id = message.from_user.id
@@ -55,7 +57,7 @@ async def start_handler(message: types.Message):
         await message.answer("⏳ Время ожидания регистрации истекло. Попробуйте снова.")
         logger.warning(f"❌ Не дождались регистрации от {user_id}")
 
-# Health-check
+# Health-check для Railway
 async def health_check(request):
     return web.Response(text="OK")
 
@@ -66,27 +68,28 @@ async def handle_webhook(request):
         logger.info(f"📥 RAW update: {data}")
         update = types.Update.to_object(data)
         await dp.process_update(update)
-        return web.Response()
+        return web.Response(text="ok")  # Возвращаем OK, чтобы Telegram не выдал 404
     except Exception as e:
-        logger.error(f"Ошибка при обработке вебхука: {e}")
+        logger.error(f"❌ Ошибка при обработке вебхука: {e}")
         return web.Response(status=500)
 
-# Лог всех сообщений (отладка)
+# Ловим все остальные сообщения (на всякий случай)
 @dp.message_handler()
 async def debug_all_messages(message: types.Message):
     logger.info(f"💬 Сообщение от {message.from_user.id}: {message.text}")
 
-# Веб-сервер
+# Настройка запуска приложения
 async def on_startup(app):
     await bot.set_webhook(f"{DOMAIN}/webhook", drop_pending_updates=True)
-    logger.info("✅ Вебхук установлен!")
+    logger.info(f"✅ Вебхук установлен: {DOMAIN}/webhook")
 
 async def on_shutdown(app):
     await bot.delete_webhook()
-    logger.info("❌ Вебхук удалён!")
+    logger.info("❌ Вебхук удалён")
 
 def create_app():
     app = web.Application()
+    logger.info("🚀 Инициализация aiohttp-приложения...")
     app.router.add_get("/health", health_check)
     app.router.add_post("/webhook", handle_webhook)
     app.on_startup.append(on_startup)
