@@ -11,7 +11,7 @@ logger = logging.getLogger(__name__)
 bot = Bot(token=BOT_TOKEN)
 dp = Dispatcher(bot)
 
-# /start — приветствие
+# /start — приветствие + логика
 @dp.message_handler(commands=['start'])
 async def start_handler(message: types.Message):
     user_id = message.from_user.id
@@ -27,12 +27,15 @@ async def start_handler(message: types.Message):
         reply_markup=keyboard
     )
 
-    # Ожидаем регистрацию
+    logger.info(f"▶️ Пользователь {user_id} начал регистрацию...")
+
+    # Ожидаем регистрацию (Lead)
     registered = await wait_for_event(bot, user_id, event_type="Lead")
     if registered:
         await message.answer(
             "🎉 Поздравляем с регистрацией!\n💸 Теперь внесите депозит, чтобы получить доступ к приложению Rocket Keeper."
         )
+        logger.info(f"✅ Регистрация подтверждена для пользователя {user_id}")
 
         # Ожидаем депозит
         deposit_amount = await wait_for_event(bot, user_id, event_type="Firstdep")
@@ -44,20 +47,23 @@ async def start_handler(message: types.Message):
                 f"🔥 Успешный депозит {deposit_amount:.0f}₽ получен!\nДобро пожаловать в Rocket Keeper!",
                 reply_markup=keyboard
             )
+            logger.info(f"💰 Депозит подтверждён для {user_id}: {deposit_amount}₽")
         else:
-            await message.answer("⏳ Ожидание депозита завершилось. Попробуйте снова позже.")
+            await message.answer("⏳ Время ожидания депозита истекло. Попробуйте снова позже.")
+            logger.warning(f"❌ Не дождались депозита от {user_id}")
     else:
         await message.answer("⏳ Время ожидания регистрации истекло. Попробуйте снова.")
+        logger.warning(f"❌ Не дождались регистрации от {user_id}")
 
 # Health-check
 async def health_check(request):
     return web.Response(text="OK")
 
-# Обработка вебхуков
-async def handle_webhook(request):logger.info(f"📥 RAW update: {data}")
-
+# Обработка вебхуков Telegram
+async def handle_webhook(request):
     try:
         data = await request.json()
+        logger.info(f"📥 RAW update: {data}")
         update = types.Update.to_object(data)
         await dp.process_update(update)
         return web.Response()
@@ -65,7 +71,12 @@ async def handle_webhook(request):logger.info(f"📥 RAW update: {data}")
         logger.error(f"Ошибка при обработке вебхука: {e}")
         return web.Response(status=500)
 
-# Веб-сервер и вебхук
+# Лог всех сообщений (отладка)
+@dp.message_handler()
+async def debug_all_messages(message: types.Message):
+    logger.info(f"💬 Сообщение от {message.from_user.id}: {message.text}")
+
+# Веб-сервер
 async def on_startup(app):
     await bot.set_webhook(f"{DOMAIN}/webhook", drop_pending_updates=True)
     logger.info("✅ Вебхук установлен!")
