@@ -54,7 +54,8 @@ async def health_check(request):
     return web.Response(text="OK")
 
 # Обработка вебхуков
-async def handle_webhook(request):
+async def handle_webhook(request):logger.info(f"📥 RAW update: {data}")
+
     try:
         data = await request.json()
         update = types.Update.to_object(data)
