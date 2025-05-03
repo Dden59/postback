@@ -21,7 +21,6 @@ logger = logging.getLogger(__name__)
 bot = Bot(token=BOT_TOKEN, parse_mode=ParseMode.HTML)
 dp = Dispatcher(storage=MemoryStorage())
 
-# Хранилище статуса пользователей (в памяти)
 user_status = {}
 
 @dp.message(commands=["start"])
@@ -29,7 +28,6 @@ async def handle_start(message: types.Message):
     user_id = message.from_user.id
     logger.info(f"/start от {user_id}")
 
-    # Отправляем ссылку на регистрацию
     link = f"https://1wwcr.com/?sub1={user_id}"
     keyboard = types.InlineKeyboardMarkup(
         inline_keyboard=[[
@@ -72,7 +70,6 @@ async def handle_postback(message: types.Message):
                 logger.info(f"✅ Депозит подтверждён: {user_id} | {amount}")
         except Exception as e:
             logger.error(f"Ошибка при обработке Firstdep: {e}")
-
     else:
         try:
             user_id = int(text)
@@ -86,11 +83,9 @@ async def handle_postback(message: types.Message):
         except Exception as e:
             logger.error(f"Ошибка при обработке лида: {e}")
 
-# Health check
 async def health_check(request):
     return web.Response(text="OK")
 
-# Запуск
 async def on_startup(bot: Bot):
     await bot.set_webhook(WEBHOOK_URL, drop_pending_updates=True)
     logger.info(f"🚀 Вебхук установлен: {WEBHOOK_URL}")
@@ -101,9 +96,9 @@ async def on_shutdown(bot: Bot):
 
 app = web.Application()
 app.router.add_get("/health", health_check)
-
 SimpleRequestHandler(dispatcher=dp, bot=bot).register(app, path=WEBHOOK_PATH)
 setup_application(app, dp, bot=bot, on_startup=on_startup, on_shutdown=on_shutdown)
 
 if __name__ == "__main__":
+    logger.info("🔥 Запуск aiohttp-приложения...")
     web.run_app(app, host="0.0.0.0", port=int(os.getenv("PORT", 8000)))
