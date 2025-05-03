@@ -1,10 +1,4 @@
 {
-  "build": {
-    "builder": "NIXPACKS",
-    "config": {
-      "NIXPACKS_PKGS": ["python3.10"]
-    }
-  },
   "deploy": {
     "startCommand": "python bot.py",
     "healthcheckPath": "/health",
